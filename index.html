@@ -611,9 +611,12 @@ async function fetchSheetData(csvUrl){
 const TAXONOMY_DEFAULTS={visual_style:'Unknown',hook:'Unknown',tone:'Unknown',narrative:'Unknown',vo:'Unknown',production:'Unknown',format:'Unknown',funnel:'Unknown',product:'Unknown',created_by:'Unknown',offer:'Unknown',prices:'Unknown',rtb:'',starring:'',language:'',season:''};
 
 function normalizeMetaAd(raw){
+  var adName=(raw.ad_name||'').trim();
+  var match=adName.match(/NK-\d+/i);
   return{
     ad_id:raw.ad_id||'',
-    ad_code:(raw.ad_name||'').trim(),
+    ad_code:match?match[0].toUpperCase():adName,
+    ad_name:adName,
     spend:parseFloat(raw.spend)||0,
     clicks:parseInt(raw.clicks)||0,
     impressions:parseInt(raw.impressions)||0,
