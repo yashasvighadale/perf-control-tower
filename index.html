@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Meta Ads Command Center | Sep 2025 – Feb 2026</title>
+<title>Perf Control Tower — Overall</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#090b10;--s1:#0f1219;--s2:#161b26;--s3:#1e2433;--bdr:#262e3f;--tx:#e4e7ee;--tx2:#8892a6;--tx3:#5a6378;--g:#2dd4a0;--g2:rgba(45,212,160,.1);--g3:rgba(45,212,160,.2);--r:#ef6461;--r2:rgba(239,100,97,.1);--r3:rgba(239,100,97,.2);--y:#f5b731;--y2:rgba(245,183,49,.1);--b:#4e9af5;--b2:rgba(78,154,245,.1);--b3:rgba(78,154,245,.15);--p:#a78bfa;--p2:rgba(167,139,250,.1);--c:#22d3ee;--c2:rgba(34,211,238,.1)}
@@ -12,10 +12,9 @@ body{background:var(--bg);color:var(--tx);font-family:'Outfit',sans-serif;line-h
 .mono{font-family:'IBM Plex Mono',monospace}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--s1)}::-webkit-scrollbar-thumb{background:var(--s3);border-radius:3px}
 .dash{max-width:1480px;margin:0 auto;padding:20px 24px 60px}
-.hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px;flex-wrap:wrap}
 .hdr h1{font-size:24px;font-weight:800;letter-spacing:-.5px}
 .hdr .sub{color:var(--tx2);font-size:12px;margin-top:2px}
-.filters{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .flt-l{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--tx3);font-weight:600}
 select{background:var(--s2);color:var(--tx);border:1px solid var(--bdr);border-radius:7px;padding:5px 26px 5px 8px;font-family:'Outfit',sans-serif;font-size:11px;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%238892a6' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 5h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center}
 select:hover{border-color:var(--b)}
@@ -91,22 +90,53 @@ tr:hover td{background:var(--s2)}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--g);display:inline-block;margin-right:5px;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 /* ── Setup / Error ── */
-.setup-prompt{text-align:center;padding:100px 20px;color:var(--tx2)}
+.setup-prompt{text-align:center;padding:80px 20px;color:var(--tx2)}
 .setup-prompt h2{font-size:20px;color:var(--tx);margin-bottom:10px;font-weight:700}
 .error-banner{background:var(--r2);border:1px solid var(--r3);border-radius:8px;padding:10px 16px;font-size:12px;color:var(--r);margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .fetch-error{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:998;min-width:340px;max-width:600px;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+/* ── Main Tabs ── */
+.main-tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--bdr)}
+.main-tab{background:none;border:none;color:var(--tx3);font:600 13px 'Outfit',sans-serif;padding:10px 20px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s}
+.main-tab:hover{color:var(--tx2)}
+.main-tab.active{color:var(--b);border-bottom-color:var(--b)}
+.main-tab-panel{display:none}
+.main-tab-panel.active{display:block}
+/* ── Filter Bar & Presets ── */
+.preset-btn{background:var(--s2);border:1px solid var(--bdr);color:var(--tx2);font:500 11px 'Outfit',sans-serif;padding:4px 10px;border-radius:5px;cursor:pointer;transition:all .15s}
+.preset-btn:hover{border-color:var(--b);color:var(--b)}
+.preset-btn.active{background:var(--b2);border-color:var(--b);color:var(--b)}
+.filter-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:18px;padding:10px 14px;background:var(--s1);border:1px solid var(--bdr);border-radius:8px}
+.date-input{background:var(--s2);color:var(--tx);border:1px solid var(--bdr);border-radius:5px;padding:4px 8px;font-size:11px;font-family:'Outfit',sans-serif}
+/* ── WoW Deltas ── */
+.delta-up{color:var(--g)}.delta-dn{color:var(--r)}.delta-flat{color:var(--tx3)}
+.kpi-delta{font-size:11px;margin-top:3px;font-weight:600}
 </style>
 </head>
 <body>
 <div class="dash" id="app"></div>
 <script>
-let DATA = {ads:[], monthly:[], weekly:[]};
+// ============================================================
+// GLOBAL STATE
+// ============================================================
+let DATA={ads:[],monthly:[],weekly:[]};
+const WEEKLY_DATA={currentPeriodAds:[],priorPeriodAds:[],dailySnapshots:{},availableDates:[]};
 
+let curProd='All',curFun='All';
+let curMainTab='overall';
+let tab1DatePreset='last90',tab1DateStart='',tab1DateEnd='';
+let tab2Period='last7',tab2PeriodStart='',tab2PeriodEnd='';
+let creativeTab='format';
+let curProdT2='All';
+
+// ============================================================
 // UTILITIES
+// ============================================================
 const fmt=n=>!n||isNaN(n)?'₹0':n>=100000?'₹'+(n/100000).toFixed(1)+'L':n>=1000?'₹'+(n/1000).toFixed(1)+'K':'₹'+Math.round(n);
 const fN=n=>!n?'0':n>=100000?(n/100000).toFixed(1)+'L':n>=1000?(n/1000).toFixed(1)+'K':Math.round(n).toLocaleString();
 const pct=n=>(n||0).toFixed(2)+'%';
 const inr=n=>'₹'+(n||0).toFixed(2);
+const toISO=d=>d.toISOString().split('T')[0];
+const subDays=(d,n)=>{const r=new Date(d);r.setDate(r.getDate()-n);return r};
 
 function groupBy(a,k){const m={};a.forEach(x=>{const v=x[k]||'Unknown';(m[v]=m[v]||[]).push(x)});return m}
 
@@ -118,11 +148,13 @@ function dimStats(ads,key){
     const im=items.reduce((s,a)=>s+(a.impressions||0),0);
     const ctrs=items.filter(a=>a.ctr>0).map(a=>a.ctr);
     const ac=ctrs.length?ctrs.reduce((s,v)=>s+v,0)/ctrs.length:0;
-    return{val:v,count:items.length,avgCtr:ac,blendCtr:im>0?cl/im*100:0,blendCpc:cl>0?sp/cl:0,cpv:im>0?sp/im:0,spend:sp,clicks:cl,impr:im};
+    const ri=items.filter(a=>a.roas>0);
+    const rs=ri.reduce((s,a)=>s+a.spend,0);
+    const roas=rs>0?ri.reduce((s,a)=>s+a.roas*a.spend,0)/rs:0;
+    return{val:v,count:items.length,avgCtr:ac,blendCtr:im>0?cl/im*100:0,blendCpc:cl>0?sp/cl:0,cpv:im>0?sp/im:0,spend:sp,clicks:cl,impr:im,roas};
   }).sort((a,b)=>b.avgCtr-a.avgCtr);
 }
 
-let curProd='All',curFun='All';
 function getAds(){
   let a=DATA.ads;
   if(curProd!=='All')a=a.filter(x=>x.product===curProd);
@@ -130,11 +162,16 @@ function getAds(){
   return a;
 }
 
-// RENDER HELPERS
+// ============================================================
+// RENDER HELPERS — KPIs
+// ============================================================
 function kpis(ads){
   const sp=ads.reduce((s,a)=>s+a.spend,0),cl=ads.reduce((s,a)=>s+a.clicks,0),im=ads.reduce((s,a)=>s+a.impressions,0);
   const ac=ads.filter(a=>a.ctr>0),avgC=ac.length?ac.reduce((s,a)=>s+a.ctr,0)/ac.length:0;
   const best=[...ads].sort((a,b)=>b.ctr-a.ctr)[0];
+  const ri=ads.filter(a=>a.roas>0),rs=ri.reduce((s,a)=>s+a.spend,0);
+  const roas=rs>0?ri.reduce((s,a)=>s+a.roas*a.spend,0)/rs:0;
+  const roasC=roas>=3?'var(--g)':roas>=2?'var(--y)':roas>0?'var(--r)':'var(--tx3)';
   return`<div class="kpis">
     <div class="kpi"><div class="kpi-l">Total Ads</div><div class="kpi-v">${ads.length}</div><div class="kpi-s">${curProd==='All'?'All products':curProd}</div></div>
     <div class="kpi"><div class="kpi-l">Total Spend</div><div class="kpi-v mono">${fmt(sp)}</div><div class="kpi-s">${fN(cl)} clicks</div></div>
@@ -142,6 +179,7 @@ function kpis(ads){
     <div class="kpi"><div class="kpi-l">Avg CTR</div><div class="kpi-v" style="color:var(--g)">${pct(avgC)}</div><div class="kpi-s">Blended: ${pct(im>0?cl/im*100:0)}</div></div>
     <div class="kpi"><div class="kpi-l">Blended CPC</div><div class="kpi-v mono" style="color:var(--y)">${inr(cl>0?sp/cl:0)}</div></div>
     <div class="kpi"><div class="kpi-l">CPV</div><div class="kpi-v mono">${inr(im>0?sp/im:0)}</div></div>
+    <div class="kpi"><div class="kpi-l">ROAS</div><div class="kpi-v mono" style="color:${roasC}">${roas>0?roas.toFixed(2)+'x':'–'}</div><div class="kpi-s">Weighted by spend</div></div>
     <div class="kpi"><div class="kpi-l">Best Ad</div><div class="kpi-v" style="color:var(--g);font-size:16px">${best?best.ad_code:'–'}</div><div class="kpi-s">${best?pct(best.ctr)+' CTR':''}</div></div>
   </div>`;
 }
@@ -169,7 +207,8 @@ function barChart(items,valKey,labelKey,title,colorFn){
   const bars=items.map(i=>{
     const h=((i[valKey]||0)/mx*125).toFixed(0);
     const c=colorFn?colorFn(i):'var(--b)';
-    return`<div class="chart-col"><div class="chart-vl">${typeof i[valKey]==='number'&&valKey.includes('roas')?i[valKey].toFixed(2)+'x':valKey.includes('cpc')?inr(i[valKey]):fmt(i[valKey])}</div><div class="chart-b" style="height:${h}px;background:${c}"></div><div class="chart-xl">${i[labelKey]}</div></div>`;
+    const vStr=typeof i[valKey]==='number'&&valKey.includes('roas')?i[valKey].toFixed(2)+'x':valKey.includes('cpc')?inr(i[valKey]):fmt(i[valKey]);
+    return`<div class="chart-col"><div class="chart-vl">${vStr}</div><div class="chart-b" style="height:${h}px;background:${c}"></div><div class="chart-xl">${i[labelKey]}</div></div>`;
   }).join('');
   return`<div class="card"><h3 style="font-size:11px;color:var(--tx2);margin-bottom:8px;font-weight:600">${title}</h3><div class="chart-bars">${bars}</div></div>`;
 }
@@ -179,17 +218,8 @@ function monthlyCharts(){
   return`<div class="g3">
     ${barChart(m,'spend','month','Monthly Spend',()=>'var(--b)')}
     ${barChart(m,'cpc','month','Monthly CPC',i=>i.cpc<10?'var(--g)':i.cpc<12?'var(--y)':'var(--r)')}
-    ${barChart(m,'roas','month','Monthly ROAS',i=>i.roas>3?'var(--g)':i.roas>2.5?'var(--y)':'var(--r)')}
+    ${barChart(m,'roas','month','Monthly ROAS',i=>i.roas>3?'var(--g)':i.roas>2?'var(--y)':'var(--r)')}
   </div>`;
-}
-
-function weeklyTable(){
-  const w=DATA.weekly.slice(-12);
-  const rows=w.map(r=>{
-    const c=r.cpc<10?'var(--g)':r.cpc<13?'var(--y)':'var(--r)';
-    return`<tr><td class="mono">${r.week}</td><td class="mono">${fmt(r.spend)}</td><td class="mono">${fN(r.clicks)}</td><td class="mono" style="color:${c}">${inr(r.cpc)}</td><td>${r.ads_count}</td></tr>`;
-  }).join('');
-  return`<div class="card"><h3 style="font-size:11px;color:var(--tx2);margin-bottom:8px;font-weight:600">Weekly Performance (Last 12 Weeks)</h3><div class="tbl-w"><table><thead><tr><th>Week</th><th>Spend</th><th>Clicks</th><th>CPC</th><th># Ads</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
 function funnelCards(ads){
@@ -198,8 +228,7 @@ function funnelCards(ads){
     const it=ads.filter(a=>a.funnel===f.k);if(!it.length)return'';
     const sp=it.reduce((s,a)=>s+a.spend,0),cl=it.reduce((s,a)=>s+a.clicks,0),im=it.reduce((s,a)=>s+a.impressions,0);
     const ac=it.filter(a=>a.ctr>0);const avg=ac.length?ac.reduce((s,a)=>s+a.ctr,0)/ac.length:0;
-    const tf=dimStats(it,'format').slice(0,3);
-    const th=dimStats(it,'hook').slice(0,2);
+    const tf=dimStats(it,'format').slice(0,3),th=dimStats(it,'hook').slice(0,2);
     return`<div class="card fnl ${f.c}"><h3 style="color:${f.clr};font-size:12px;font-weight:700;margin-bottom:2px">${f.l}</h3>
     <div style="font-size:11px;color:var(--tx3);margin-bottom:10px">${it.length} ads · ${fmt(sp)} spend</div>
     <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap">
@@ -249,33 +278,27 @@ function crossAnalysis(ads){
     const k=a.format+'|'+a.visual_style;
     (combos[k]=combos[k]||[]).push(a);
   });
-  let rows=Object.entries(combos).filter(([,v])=>v.length>=2).map(([k,items])=>{
+  const rows=Object.entries(combos).filter(([,v])=>v.length>=2).map(([k,items])=>{
     const[f,s]=k.split('|');
     const ac=items.filter(a=>a.ctr>0).map(a=>a.ctr);
     const avg=ac.length?ac.reduce((a,b)=>a+b,0)/ac.length:0;
-    const sp=items.reduce((a,b)=>a+b.spend,0);
-    const cl=items.reduce((a,b)=>a+b.clicks,0);
-    return{f,s,n:items.length,avg,cpc:cl>0?sp/cl:0,sp};
+    const sp=items.reduce((a,b)=>a+b.spend,0),cl=items.reduce((a,b)=>a+b.clicks,0);
+    return{f,s,n:items.length,avg,cpc:cl>0?sp/cl:0};
   }).sort((a,b)=>b.avg-a.avg);
-  
-  // Hook x Tone
   const ht={};
   ads.forEach(a=>{
     if(a.hook==='Unknown'||a.tone==='Unknown')return;
     const k=a.hook+'|'+a.tone;
     (ht[k]=ht[k]||[]).push(a);
   });
-  let htRows=Object.entries(ht).filter(([,v])=>v.length>=2).map(([k,items])=>{
+  const htRows=Object.entries(ht).filter(([,v])=>v.length>=2).map(([k,items])=>{
     const[h,t]=k.split('|');
     const ac=items.filter(a=>a.ctr>0).map(a=>a.ctr);
     const avg=ac.length?ac.reduce((a,b)=>a+b,0)/ac.length:0;
-    const sp=items.reduce((a,b)=>a+b.spend,0);
-    const cl=items.reduce((a,b)=>a+b.clicks,0);
+    const sp=items.reduce((a,b)=>a+b.spend,0),cl=items.reduce((a,b)=>a+b.clicks,0);
     return{h,t,n:items.length,avg,cpc:cl>0?sp/cl:0};
   }).sort((a,b)=>b.avg-a.avg);
-
   const gA=ads.filter(a=>a.ctr>0);const gAvg=gA.length?gA.reduce((s,a)=>s+a.ctr,0)/gA.length:1;
-
   const r1=rows.slice(0,10).map(r=>{
     const c=r.avg>gAvg*1.15?'var(--g)':r.avg<gAvg*.85?'var(--r)':'var(--tx)';
     return`<tr><td>${r.f}</td><td>${r.s}</td><td>${r.n}</td><td class="mono" style="color:${c}">${pct(r.avg)}</td><td class="mono">${inr(r.cpc)}</td></tr>`;
@@ -284,7 +307,6 @@ function crossAnalysis(ads){
     const c=r.avg>gAvg*1.15?'var(--g)':r.avg<gAvg*.85?'var(--r)':'var(--tx)';
     return`<tr><td>${r.h}</td><td>${r.t}</td><td>${r.n}</td><td class="mono" style="color:${c}">${pct(r.avg)}</td><td class="mono">${inr(r.cpc)}</td></tr>`;
   }).join('');
-
   return`<div class="g2">
     <div class="card"><h3 style="font-size:12px;color:var(--tx2);margin-bottom:8px;font-weight:600">Format × Visual Style (min 2 ads)</h3><div class="tbl-w"><table><thead><tr><th>Format</th><th>Visual Style</th><th>#</th><th>Avg CTR</th><th>CPC</th></tr></thead><tbody>${r1}</tbody></table></div></div>
     <div class="card"><h3 style="font-size:12px;color:var(--tx2);margin-bottom:8px;font-weight:600">Hook × Emotion/Tone (min 2 ads)</h3><div class="tbl-w"><table><thead><tr><th>Hook</th><th>Tone</th><th>#</th><th>Avg CTR</th><th>CPC</th></tr></thead><tbody>${r2}</tbody></table></div></div>
@@ -296,9 +318,10 @@ function fullTable(ads){
   const rows=s.map(a=>{
     const cc=a.ctr>2.5?'var(--g)':a.ctr>1.5?'var(--y)':'var(--r)';
     const pc=a.cpc<10?'var(--g)':a.cpc<20?'var(--y)':'var(--r)';
-    return`<tr><td style="font-weight:600">${a.ad_code}</td><td>${a.product}</td><td><span class="bdg bdg-b">${a.funnel}</span></td><td class="mono" style="color:${cc}">${pct(a.ctr)}</td><td class="mono" style="color:${pc}">${inr(a.cpc)}</td><td class="mono">${fmt(a.spend)}</td><td>${a.format}</td><td>${a.visual_style}</td><td>${a.hook}</td><td>${a.tone}</td><td>${a.narrative}</td><td>${a.vo}</td><td>${a.created_by}</td><td>${a.offer}</td></tr>`;
+    const rc=a.roas>=3?'var(--g)':a.roas>=2?'var(--y)':a.roas>0?'var(--r)':'var(--tx3)';
+    return`<tr><td style="font-weight:600">${a.ad_code}</td><td>${a.product}</td><td><span class="bdg bdg-b">${a.funnel}</span></td><td class="mono" style="color:${cc}">${pct(a.ctr)}</td><td class="mono" style="color:${pc}">${inr(a.cpc)}</td><td class="mono">${fmt(a.spend)}</td><td class="mono" style="color:${rc}">${a.roas>0?a.roas.toFixed(2)+'x':'–'}</td><td>${a.format}</td><td>${a.visual_style}</td><td>${a.hook}</td><td>${a.tone}</td><td>${a.narrative}</td><td>${a.vo}</td><td>${a.created_by}</td><td>${a.offer}</td></tr>`;
   }).join('');
-  return`<div class="card"><div class="tbl-w" style="max-height:600px"><table><thead><tr><th>Ad</th><th>Product</th><th>Funnel</th><th>CTR</th><th>CPC</th><th>Spend</th><th>Format</th><th>Style</th><th>Hook</th><th>Tone</th><th>Narrative</th><th>VO</th><th>Creator</th><th>Offer</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  return`<div class="card"><div class="tbl-w" style="max-height:600px"><table><thead><tr><th>Ad</th><th>Product</th><th>Funnel</th><th>CTR</th><th>CPC</th><th>Spend</th><th>ROAS</th><th>Format</th><th>Style</th><th>Hook</th><th>Tone</th><th>Narrative</th><th>VO</th><th>Creator</th><th>Offer</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
 function spendFlags(ads){
@@ -320,7 +343,6 @@ function costPlaybook(ads){
   const tSpend=ads.reduce((s,a)=>s+a.spend,0);
   const ineff=ads.filter(a=>a.ctr<gAvg*.7&&a.spend>5000);
   const ineffSp=ineff.reduce((s,a)=>s+a.spend,0);
-  
   const fmtS=dimStats(ads,'format').filter(s=>s.val!=='Unknown');
   const best=fmtS[0],worst=fmtS[fmtS.length-1];
   const hookS=dimStats(ads,'hook').filter(s=>s.val!=='Unknown');
@@ -329,10 +351,13 @@ function costPlaybook(ads){
   const noVO=voS.find(v=>v.val==='No VO'),yVO=voS.find(v=>v.val==='VO');
   const prodS=dimStats(ads,'product').filter(s=>s.val!=='Unknown');
   const bestP=prodS[0],worstP=prodS[prodS.length-1];
+  const highSpendP=[...prodS].sort((a,b)=>b.spend-a.spend)[0];
   const brandS=dimStats(ads,'production').find(s=>s.val==='Brand');
   const narS=dimStats(ads,'narrative').filter(s=>s.val!=='Unknown');
   const bestN=narS[0],worstN=narS[narS.length-1];
-  
+  const funnelS=dimStats(ads,'funnel').filter(s=>s.val!=='Unknown');
+  const tofCount=funnelS.find(s=>s.val==='TOF')?.count||0;
+  const worstHook=hookS[hookS.length-1];
   return`<div class="saving-box">
     <h2 style="margin-bottom:16px;font-size:16px;font-weight:700">💰 Cost Optimization & Efficiency Playbook</h2>
     <div class="g2" style="gap:16px;margin-bottom:16px">
@@ -348,59 +373,437 @@ function costPlaybook(ads){
       </div>
     </div>
     <div class="div" style="margin:12px 0;background:var(--g3)"></div>
-    <h3 style="font-size:13px;font-weight:700;margin-bottom:10px">Strategic Recommendations for Leadership</h3>
-    
-    <div class="ins ins-w"><span class="ins-ic">1️⃣</span><div><strong>Shift creative mix to GIFs + 15-30s Video:</strong> <strong>${best?best.val:'GIFs'}</strong> delivers ${best?pct(best.avgCtr):'4.23%'} avg CTR at ${best?inr(best.blendCpc):'₹7.86'} CPC vs <strong>${worst?worst.val:'worst format'}</strong> at ${worst?pct(worst.avgCtr):'1.19%'} / ${worst?inr(worst.blendCpc):'₹28.47'}. Reallocating 30% of static image budget to motion formats could save ₹50K-80K/month in wasted clicks.</div></div>
-    
-    <div class="ins ins-w"><span class="ins-ic">2️⃣</span><div><strong>Fix the Brisk problem:</strong> Brisk is your #1 spend product (${fmt(prodS.find(s=>s.val==='Brisk')?.spend||0)}) but has the lowest blended CTR at ${pct(prodS.find(s=>s.val==='Brisk')?.blendCtr||0)}. Meanwhile <strong>${bestP?bestP.val:'STROM GO'}</strong> achieves ${bestP?pct(bestP.avgCtr):'2.84%'} CTR. Run an A/B test applying STROM GO's winning creative formula (GIF/15-30s + Pain Point hook) to Brisk ads.</div></div>
-    
-    <div class="ins ins-w"><span class="ins-ic">3️⃣</span><div><strong>Eliminate Voice Over on Meta:</strong> No VO ads cost ${noVO?inr(noVO.blendCpc):'₹9.60'} per click vs ${yVO?inr(yVO.blendCpc):'₹11.87'} for VO — and VO's blended CTR is only ${yVO?pct(yVO.blendCtr):'0.22%'} vs ${noVO?pct(noVO.blendCtr):'2.18%'} for silent ads. 85%+ of Meta users browse with sound off. <strong>Save on VO production AND get better performance.</strong></div></div>
-    
-    <div class="ins ins-w"><span class="ins-ic">4️⃣</span><div><strong>Scale "${bestH?bestH.val:'Pain Point Trigger'}" hooks:</strong> ${bestH?pct(bestH.avgCtr):'2.76%'} avg CTR at ${bestH?inr(bestH.blendCpc):'₹8.75'} CPC. Only ${bestH?bestH.count:7} of ${ads.length} ads use this hook type. Replacing generic/celebrity hooks (which show ${pct(hookS.find(s=>s.val==='celebrity')?.avgCtr||0)} CTR) could improve click efficiency by 3-4x.</div></div>
-    
-    <div class="ins ins-y"><span class="ins-ic">5️⃣</span><div><strong>Invest in Story Telling + Problem Solution narratives:</strong> "${bestN?bestN.val:'Story Telling'}" delivers ${bestN?pct(bestN.avgCtr):'3.35%'} CTR while "${worstN?worstN.val:'worst narrative'}" shows ${worstN?pct(worstN.avgCtr):'N/A'}. Educational and PR Coverage narratives consistently underperform — redirect those creative resources.</div></div>
-    
-    <div class="ins ins-y"><span class="ins-ic">6️⃣</span><div><strong>ROAS is declining (3.85x Nov → 2.14x Feb):</strong> Monthly data shows clear ROAS erosion. This suggests creative fatigue. Implement a 3-week creative refresh cycle and increase creative volume for MOF/BOF where ROAS is typically highest.</div></div>
-    
-    <div class="ins ins-n"><span class="ins-ic">7️⃣</span><div><strong>Rebalance funnel spend:</strong> TOF has ${dimStats(ads,'funnel').find(s=>s.val==='TOF')?.count||0} ads (68% of creatives) but MOF/BOF where warm audiences convert cheaper are underinvested. Shift 15-20% of TOF budget to MOF retargeting with the winning GIF format.</div></div>
-    
-    <div class="ins ins-n"><span class="ins-ic">8️⃣</span><div><strong>Creator assignment optimization:</strong> Top creators (by CTR efficiency) should get more volume. Brand in-house production at ${brandS?inr(brandS.blendCpc):'₹9.89'} CPC is more cost-efficient. Consider an internal "creative war room" with weekly performance reviews to iterate faster on winning formats.</div></div>
+    <h3 style="font-size:13px;font-weight:700;margin-bottom:10px">Strategic Recommendations</h3>
+    <div class="ins ins-w"><span class="ins-ic">1️⃣</span><div><strong>Shift creative mix to ${best?best.val:'motion formats'}:</strong> <strong>${best?best.val:'Best format'}</strong> delivers ${best?pct(best.avgCtr):'–'} avg CTR at ${best?inr(best.blendCpc):'–'} CPC vs <strong>${worst?worst.val:'worst format'}</strong> at ${worst?pct(worst.avgCtr):'–'} / ${worst?inr(worst.blendCpc):'–'}. Reallocating 30% of budget to top-format could reduce wasted spend significantly.</div></div>
+    <div class="ins ins-w"><span class="ins-ic">2️⃣</span><div><strong>Optimize ${highSpendP?highSpendP.val:'highest-spend product'} creative:</strong> ${highSpendP?highSpendP.val:'Top spend product'} is your #1 spend product (${fmt(highSpendP?.spend||0)}) — apply <strong>${bestP?bestP.val:'top product'}</strong>'s winning formula (${bestP?pct(bestP.avgCtr):'–'} CTR) to drive efficiency improvements.</div></div>
+    <div class="ins ins-w"><span class="ins-ic">3️⃣</span><div><strong>Eliminate Voice Over on Meta:</strong> No VO ads cost ${noVO?inr(noVO.blendCpc):'less'} per click vs ${yVO?inr(yVO.blendCpc):'more'} for VO — and silent ads have ${noVO?pct(noVO.blendCtr):'higher'} blended CTR vs ${yVO?pct(yVO.blendCtr):'lower'} for VO. 85%+ of Meta users browse with sound off. <strong>Save on VO production AND get better performance.</strong></div></div>
+    <div class="ins ins-w"><span class="ins-ic">4️⃣</span><div><strong>Scale "${bestH?bestH.val:'top hook'}" hooks:</strong> ${bestH?pct(bestH.avgCtr):'–'} avg CTR at ${bestH?inr(bestH.blendCpc):'–'} CPC. Only ${bestH?bestH.count:'?'} of ${ads.length} ads use this hook type. Replacing ${worstHook?'"'+worstHook.val+'"':' underperforming'} hooks (${worstHook?pct(worstHook.avgCtr):'–'} CTR) could dramatically improve click efficiency.</div></div>
+    <div class="ins ins-y"><span class="ins-ic">5️⃣</span><div><strong>Invest in ${bestN?bestN.val:'top narrative'} narratives:</strong> "${bestN?bestN.val:'Best narrative'}" delivers ${bestN?pct(bestN.avgCtr):'–'} CTR while "${worstN?worstN.val:'worst narrative'}" shows ${worstN?pct(worstN.avgCtr):'–'}. Redirect creative resources from underperforming narrative types.</div></div>
+    <div class="ins ins-n"><span class="ins-ic">6️⃣</span><div><strong>Rebalance funnel spend:</strong> TOF has ${tofCount} ads. MOF/BOF warm audiences convert at a lower CPC — shift 15-20% of TOF budget to MOF retargeting with the winning ${best?best.val:'format'}.</div></div>
+    <div class="ins ins-n"><span class="ins-ic">7️⃣</span><div><strong>Creator assignment optimization:</strong> Top creators (by CTR efficiency) should get more volume. ${brandS?'Brand in-house production at '+inr(brandS.blendCpc)+' CPC is cost-efficient.':''} Consider weekly performance reviews to iterate faster on winning formats.</div></div>
   </div>`;
 }
 
-// EXECUTIVE SUMMARY
 function execSummary(ads){
   const fmtS=dimStats(ads,'format').filter(s=>s.val!=='Unknown');
   const hookS=dimStats(ads,'hook').filter(s=>s.val!=='Unknown');
   const styleS=dimStats(ads,'visual_style').filter(s=>s.val!=='Unknown');
   const prodS=dimStats(ads,'product').filter(s=>s.val!=='Unknown');
-  
+  const bestFmt=fmtS[0],worstFmt=fmtS[fmtS.length-1];
+  const bestH=hookS[0],worstH=hookS[hookS.length-1];
+  const bestP=prodS[0],worstP=prodS[prodS.length-1];
+  const bestS=styleS[0];
+  const narS=dimStats(ads,'narrative').filter(s=>s.val!=='Unknown');
+  const bestN=narS[0],worstN=narS[narS.length-1];
   return`<div class="exec-box">
     <h2 style="margin-bottom:14px;font-size:16px;font-weight:700">🎯 Executive Summary: What's Working vs. What's Not</h2>
     <div class="g2">
       <div>
         <h3 style="color:var(--g);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">✅ What's Working</h3>
-        <div class="ins ins-w"><span class="ins-ic">🏆</span><div><strong>GIFs dominate</strong> — 4.23% avg CTR, ₹7.86 CPC. 2x better than average on both metrics. Your most efficient format.</div></div>
-        <div class="ins ins-w"><span class="ins-ic">🎬</span><div><strong>Video 15-30sec</strong> is the high-scale winner — 2.97% CTR with ₹2.1L spend proving it works at volume.</div></div>
-        <div class="ins ins-w"><span class="ins-ic">🎯</span><div><strong>STROM GO + DRIP</strong> are your star products — highest CTR at reasonable CPC.</div></div>
-        <div class="ins ins-w"><span class="ins-ic">🪝</span><div><strong>Pain Point Triggers + FOMO hooks</strong> crush generic hooks by 1.5-2x on CTR.</div></div>
-        <div class="ins ins-w"><span class="ins-ic">📖</span><div><strong>Story Telling narrative</strong> — 3.35% CTR, best narrative by far when paired with engaging formats.</div></div>
+        <div class="ins ins-w"><span class="ins-ic">🏆</span><div><strong>${bestFmt?bestFmt.val:'Top format'} dominates</strong> — ${bestFmt?pct(bestFmt.avgCtr)+'avg CTR, '+inr(bestFmt.blendCpc)+' CPC.':''} Your most efficient format.</div></div>
+        <div class="ins ins-w"><span class="ins-ic">🎯</span><div><strong>${bestP?bestP.val:'Top product'}</strong> — highest CTR at ${bestP?pct(bestP.avgCtr):''} with reasonable CPC.</div></div>
+        <div class="ins ins-w"><span class="ins-ic">🪝</span><div><strong>${bestH?bestH.val:'Top hook'}</strong> — ${bestH?pct(bestH.avgCtr)+' CTR':''}, best-performing hook type.</div></div>
+        <div class="ins ins-w"><span class="ins-ic">📖</span><div><strong>${bestN?bestN.val:'Top narrative'}</strong> — ${bestN?pct(bestN.avgCtr)+' CTR, best narrative when paired with engaging formats.':''}</div></div>
+        <div class="ins ins-w"><span class="ins-ic">🎨</span><div><strong>${bestS?bestS.val:'Top visual style'}</strong> — ${bestS?pct(bestS.avgCtr)+' avg CTR.':''}</div></div>
       </div>
       <div>
         <h3 style="color:var(--r);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">❌ What's Not Working</h3>
-        <div class="ins ins-l"><span class="ins-ic">🛑</span><div><strong>Video 45-60sec</strong> is dead weight — 1.19% CTR, ₹28.47 CPC. Too long for Meta scroll behavior.</div></div>
-        <div class="ins ins-l"><span class="ins-ic">📉</span><div><strong>Brisk ads</strong> at 0.41% blended CTR despite 28% of total spend. Massive efficiency leak.</div></div>
-        <div class="ins ins-l"><span class="ins-ic">⚠️</span><div><strong>Celebrity hooks</strong> — 0.77% avg CTR, worst performing hook type. Celebrity doesn't equal engagement.</div></div>
-        <div class="ins ins-l"><span class="ins-ic">💸</span><div><strong>REN BEAM</strong> — ₹22.18 CPC (2x average). Check targeting and creative quality.</div></div>
-        <div class="ins ins-l"><span class="ins-ic">📊</span><div><strong>Educational + Testimonial narratives</strong> consistently bottom-rank. People want solutions, not lectures.</div></div>
+        <div class="ins ins-l"><span class="ins-ic">🛑</span><div><strong>${worstFmt?worstFmt.val:'Worst format'}</strong> — ${worstFmt?pct(worstFmt.avgCtr)+' CTR, '+inr(worstFmt.blendCpc)+' CPC. Significant drag on efficiency.':''}</div></div>
+        <div class="ins ins-l"><span class="ins-ic">📉</span><div><strong>${worstP?worstP.val:'Worst product'}</strong> — ${worstP?pct(worstP.blendCtr)+' blended CTR despite '+fmt(worstP.spend)+' spend. Efficiency leak.':''}</div></div>
+        <div class="ins ins-l"><span class="ins-ic">⚠️</span><div><strong>${worstH?worstH.val:'Worst hook'}</strong> — ${worstH?pct(worstH.avgCtr)+' avg CTR, worst-performing hook type.':''}</div></div>
+        <div class="ins ins-l"><span class="ins-ic">📊</span><div><strong>${worstN?worstN.val:'Worst narrative'}</strong> — ${worstN?pct(worstN.avgCtr)+' CTR, consistently bottom-ranks.':''}</div></div>
       </div>
     </div>
   </div>`;
 }
 
 // ============================================================
+// TAB NAVIGATION
+// ============================================================
+function switchMainTab(tab){
+  curMainTab=tab;
+  document.title=tab==='weekly'?'Perf Control Tower — Weekly Review':'Perf Control Tower — Overall';
+  document.querySelectorAll('.main-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.querySelectorAll('.main-tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+tab));
+  if(tab==='weekly'&&WEEKLY_DATA.availableDates.length===0)loadWeeklyTab();
+}
+
+// ============================================================
+// TAB 1 — FILTER BAR
+// ============================================================
+function renderTab1Filters(products){
+  const presets=[{v:'last30',l:'Last 30d'},{v:'last60',l:'Last 60d'},{v:'last90',l:'Last 90d'},{v:'last6mo',l:'Last 6mo'},{v:'alltime',l:'All Time'},{v:'custom',l:'Custom'}];
+  const prodOpts=products.map(p=>`<option value="${p}" ${p===curProd?'selected':''}>${p}</option>`).join('');
+  const customInputs=tab1DatePreset==='custom'?`
+    <input type="date" class="date-input" id="t1start" value="${tab1DateStart}" onchange="tab1DateStart=this.value">
+    <span style="color:var(--tx3)">–</span>
+    <input type="date" class="date-input" id="t1end" value="${tab1DateEnd}" onchange="tab1DateEnd=this.value">
+    <button class="preset-btn" onclick="applyCustomRange()">Apply</button>`:'';
+  return`<div class="filter-bar">
+    <span class="flt-l">Product:</span>
+    <select id="fp" onchange="curProd=this.value;render()">${prodOpts}</select>
+    <span class="flt-l" style="margin-left:8px">Period:</span>
+    ${presets.map(p=>`<button class="preset-btn${tab1DatePreset===p.v?' active':''}" onclick="setTab1Preset('${p.v}')">${p.l}</button>`).join('')}
+    ${customInputs}
+  </div>`;
+}
+
+function setTab1Preset(v){
+  tab1DatePreset=v;
+  const today=new Date();
+  if(v==='last30'){tab1DateStart=toISO(subDays(today,30));tab1DateEnd=toISO(today);}
+  else if(v==='last60'){tab1DateStart=toISO(subDays(today,60));tab1DateEnd=toISO(today);}
+  else if(v==='last90'){tab1DateStart=toISO(subDays(today,90));tab1DateEnd=toISO(today);}
+  else if(v==='last6mo'){tab1DateStart=toISO(subDays(today,180));tab1DateEnd=toISO(today);}
+  else if(v==='alltime'){tab1DateStart='';tab1DateEnd='';}
+  else if(v==='custom'){render();return;}
+  LS.set('startDate',tab1DateStart);LS.set('endDate',tab1DateEnd);
+  initDashboard();
+}
+
+function applyCustomRange(){
+  if(!tab1DateStart||!tab1DateEnd)return showFetchError('Please select both start and end dates.');
+  if(tab1DateStart>tab1DateEnd)return showFetchError('Start date must be before end date.');
+  LS.set('startDate',tab1DateStart);LS.set('endDate',tab1DateEnd);
+  initDashboard();
+}
+
+// ============================================================
+// TAB 1 — CREATIVE INTELLIGENCE SUB-TABS
+// ============================================================
+function renderCreativeIntelligence(ads){
+  const tabs=[{k:'format',l:'Format'},{k:'visual_style',l:'Visual Style'},{k:'hook',l:'Hook Type'},{k:'tone',l:'Tone/Emotion'},{k:'narrative',l:'Narrative'},{k:'vo',l:'VO & Production'}];
+  return`<div class="card">
+    <div class="tabs" id="creative-tabs">
+      ${tabs.map(t=>`<div class="tab${creativeTab===t.k?' active':''}" data-tab="${t.k}" onclick="switchCreativeTab('${t.k}')">${t.l}</div>`).join('')}
+    </div>
+    <div id="creative-panel">${creativePanel(ads,creativeTab)}</div>
+  </div>`;
+}
+
+function creativePanel(ads,tab){
+  if(tab==='format')return`<div class="g2">${dimTable(ads,'format','Creative Format',true)}${barChart(dimStats(ads,'format').filter(s=>s.val!=='Unknown'),'avgCtr','val','Format Avg CTR',i=>i.avgCtr>2.3?'var(--g)':i.avgCtr>1.8?'var(--y)':'var(--r)')}</div>`;
+  if(tab==='visual_style')return`<div class="g2">${dimTable(ads,'visual_style','Visual Style',true)}${barChart(dimStats(ads,'visual_style').filter(s=>s.val!=='Unknown'),'avgCtr','val','Visual Style CTR',i=>i.avgCtr>2.3?'var(--g)':i.avgCtr>1.8?'var(--y)':'var(--r)')}</div>`;
+  if(tab==='hook')return dimTable(ads,'hook','Hook Type',true);
+  if(tab==='tone')return`<div class="g2">${dimTable(ads,'tone','Emotion / Tone',true)}${dimTable(ads,'narrative','Narrative / Pillar',true)}</div>`;
+  if(tab==='narrative')return dimTable(ads,'narrative','Narrative / Pillar',true);
+  if(tab==='vo')return`<div class="g2">${dimTable(ads,'vo','Voice Over',false)}${dimTable(ads,'production','Production Team',false)}</div>`;
+  return '';
+}
+
+function switchCreativeTab(tab){
+  creativeTab=tab;
+  const ads=getAds();
+  document.getElementById('creative-panel').innerHTML=creativePanel(ads,tab);
+  document.querySelectorAll('#creative-tabs .tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===tab));
+}
+
+// ============================================================
 // MAIN RENDER
 // ============================================================
+function render(){
+  const ads=getAds();
+  const products=['All',...new Set(DATA.ads.map(a=>a.product).filter(p=>p&&p!=='Unknown'))].sort((a,b)=>a==='All'?-1:b==='All'?1:a.localeCompare(b));
+  document.title=curMainTab==='weekly'?'Perf Control Tower — Weekly Review':'Perf Control Tower — Overall';
+  document.getElementById('app').innerHTML=`
+    <div class="hdr">
+      <div>
+        <h1>Perf Control Tower</h1>
+        <div class="sub"><span class="status-dot"></span>${DATA.ads.length} ads · All values in INR</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button class="btn-refresh" onclick="initDashboard()">↺ Refresh</button>
+        <button class="btn-settings" onclick="renderSettingsModal()">⚙ Settings</button>
+      </div>
+    </div>
+    <div class="main-tabs">
+      <button class="main-tab${curMainTab==='overall'?' active':''}" data-tab="overall" onclick="switchMainTab('overall')">Overall Analysis</button>
+      <button class="main-tab${curMainTab==='weekly'?' active':''}" data-tab="weekly" onclick="switchMainTab('weekly')">Weekly Review</button>
+    </div>
+    <div class="main-tab-panel${curMainTab==='overall'?' active':''}" id="tab-overall">
+      ${renderTab1(ads,products)}
+    </div>
+    <div class="main-tab-panel${curMainTab==='weekly'?' active':''}" id="tab-weekly">
+      <div style="text-align:center;padding:60px;color:var(--tx2)"><div class="spinner" style="margin:0 auto 12px;width:28px;height:28px"></div>Loading weekly data…</div>
+    </div>
+  `;
+  if(curMainTab==='weekly')loadWeeklyTab();
+}
+
+function renderTab1(ads,products){
+  return`
+    ${renderTab1Filters(products)}
+    ${kpis(ads)}
+    ${execSummary(ads)}
+    <div class="sec"><div class="sec-h"><h2>📈 Monthly Trends</h2></div>${monthlyCharts()}</div>
+    <div class="div"></div>
+    <div class="sec"><div class="sec-h"><h2>🔽 Funnel Intelligence</h2></div><div class="g3">${funnelCards(ads)}</div></div>
+    <div class="div"></div>
+    <div class="sec"><div class="sec-h"><h2>🎨 Creative Intelligence</h2></div>${renderCreativeIntelligence(ads)}</div>
+    <div class="div"></div>
+    <div class="sec"><div class="sec-h"><h2>🔀 Cross-Dimensional Analysis</h2></div>${crossAnalysis(ads)}</div>
+    <div class="div"></div>
+    <div class="sec"><div class="sec-h"><h2>👤 Creator & Attribution</h2></div>
+    <div class="g3">${dimTable(ads,'created_by','Created By',true)}${dimTable(ads,'offer','Offer Type',false)}${dimTable(ads,'prices','Pricing Shown',false)}</div></div>
+    <div class="div"></div>
+    <div class="sec"><div class="sec-h"><h2>🏅 Ad Leaderboard</h2></div>${topBottom(ads)}</div>
+    <div class="div"></div>
+    <div class="sec"><div class="sec-h"><h2>💸 Spend Efficiency</h2></div>${spendFlags(ads)}</div>
+    <div class="div"></div>
+    <div class="sec"><div class="sec-h"><h2>📋 Full Ad Explorer (${ads.length} ads)</h2></div>${fullTable(ads)}</div>
+    <div class="div"></div>
+    <div class="sec">${costPlaybook(ads)}</div>
+    <div style="text-align:center;padding:24px;color:var(--tx3);font-size:11px">Perf Control Tower · ${DATA.ads.length} creatives · All values INR · Last fetched: ${new Date().toLocaleString()}</div>
+  `;
+}
+
+// ============================================================
+// TAB 2 — WEEKLY REVIEW DATA LAYER
+// ============================================================
+function computePeriodDates(preset,customStart,customEnd){
+  const today=new Date();
+  let currStart,currEnd;
+  if(preset==='custom'&&customStart&&customEnd){currStart=new Date(customStart);currEnd=new Date(customEnd);}
+  else if(preset==='last14'){currEnd=new Date(today);currStart=subDays(today,14);}
+  else if(preset==='last30'){currEnd=new Date(today);currStart=subDays(today,30);}
+  else{currEnd=new Date(today);currStart=subDays(today,7);}
+  const diff=Math.round((currEnd-currStart)/(1000*60*60*24));
+  const priorEnd=new Date(currStart);priorEnd.setDate(priorEnd.getDate()-1);
+  const priorStart=subDays(priorEnd,diff);
+  return{current:{start:toISO(currStart),end:toISO(currEnd)},prior:{start:toISO(priorStart),end:toISO(priorEnd)}};
+}
+
+function getDatesInRange(start,end){
+  const dates=[];let d=new Date(start);const e=new Date(end);
+  while(d<=e){dates.push(toISO(d));d.setDate(d.getDate()+1);}
+  return dates;
+}
+
+async function fetchSnapshot(date){
+  if(WEEKLY_DATA.dailySnapshots[date]!==undefined)return;
+  if(!WEEKLY_DATA.availableDates.includes(date)){WEEKLY_DATA.dailySnapshots[date]=[];return;}
+  try{
+    const res=await fetch(`./data/snapshots/${date}.json`);
+    if(!res.ok){WEEKLY_DATA.dailySnapshots[date]=[];return;}
+    const json=await res.json();
+    WEEKLY_DATA.dailySnapshots[date]=json.ads||[];
+  }catch(e){WEEKLY_DATA.dailySnapshots[date]=[];}
+}
+
+function aggregateSnapshotsForPeriod(start,end){
+  return getDatesInRange(start,end).flatMap(d=>WEEKLY_DATA.dailySnapshots[d]||[]);
+}
+
+function periodKPI(ads){
+  const sp=ads.reduce((s,a)=>s+(a.spend||0),0);
+  const cl=ads.reduce((s,a)=>s+(a.clicks||0),0);
+  const im=ads.reduce((s,a)=>s+(a.impressions||0),0);
+  const ri=ads.filter(a=>a.roas>0),rs=ri.reduce((s,a)=>s+a.spend,0);
+  const roas=rs>0?ri.reduce((s,a)=>s+a.roas*a.spend,0)/rs:0;
+  return{spend:sp,clicks:cl,impressions:im,ctr:im>0?cl/im*100:0,cpc:cl>0?sp/cl:0,roas};
+}
+
+function deltaStr(curr,prior,lowerIsBetter){
+  if(!prior||prior===0)return'';
+  const d=(curr-prior)/prior*100;
+  const good=lowerIsBetter?d<-5:d>5,bad=lowerIsBetter?d>5:d<-5;
+  const cls=good?'delta-up':bad?'delta-dn':'delta-flat';
+  return`<div class="kpi-delta ${cls}">${d>0?'▲':'▼'} ${Math.abs(d).toFixed(1)}% WoW</div>`;
+}
+
+async function loadWeeklyTab(){
+  const panel=document.getElementById('tab-weekly');
+  if(!panel)return;
+  panel.innerHTML=`<div style="text-align:center;padding:60px;color:var(--tx2)"><div class="spinner" style="margin:0 auto 12px;width:28px;height:28px"></div>Loading weekly snapshots…</div>`;
+  if(WEEKLY_DATA.availableDates.length===0){
+    try{
+      const res=await fetch('./data/index.json');
+      if(!res.ok)throw new Error('index.json not found');
+      const json=await res.json();
+      WEEKLY_DATA.availableDates=json.dates||[];
+    }catch(e){
+      panel.innerHTML=renderWeeklySetupMessage();
+      return;
+    }
+  }
+  if(WEEKLY_DATA.availableDates.length===0){panel.innerHTML=renderWeeklySetupMessage();return;}
+  const periods=computePeriodDates(tab2Period,tab2PeriodStart,tab2PeriodEnd);
+  const allDates=[...new Set([...getDatesInRange(periods.current.start,periods.current.end),...getDatesInRange(periods.prior.start,periods.prior.end)])];
+  await Promise.all(allDates.map(d=>fetchSnapshot(d)));
+  WEEKLY_DATA.currentPeriodAds=aggregateSnapshotsForPeriod(periods.current.start,periods.current.end);
+  WEEKLY_DATA.priorPeriodAds=aggregateSnapshotsForPeriod(periods.prior.start,periods.prior.end);
+  renderWeeklyTab();
+}
+
+function renderWeeklySetupMessage(){
+  return`<div class="setup-prompt">
+    <div style="font-size:40px;margin-bottom:16px">📅</div>
+    <h2>No Snapshot Data Yet</h2>
+    <p style="margin-bottom:8px;font-size:13px">The Weekly Review tab requires daily snapshots generated by GitHub Actions.</p>
+    <p style="margin-bottom:8px;font-size:12px;color:var(--tx3)">Add these secrets to your GitHub repo settings:</p>
+    <ul style="text-align:left;display:inline-block;font-size:12px;color:var(--tx2);margin:8px 0 20px;line-height:2">
+      <li><code>META_TOKEN</code> — your Meta access token</li>
+      <li><code>ACCOUNT_ID</code> — your ad account ID (numbers only)</li>
+      <li><code>SHEET_CSV_URL</code> — your Google Sheet CSV URL</li>
+    </ul>
+    <p style="font-size:12px;color:var(--tx3)">Then trigger <code>.github/workflows/daily-fetch.yml</code> manually or wait for the daily 8:30 PM UTC run.</p>
+  </div>`;
+}
+
+// ============================================================
+// TAB 2 — RENDERING
+// ============================================================
+function renderWeeklyTab(){
+  const panel=document.getElementById('tab-weekly');
+  if(!panel)return;
+  const products=['All',...new Set(WEEKLY_DATA.currentPeriodAds.map(a=>a.product).filter(p=>p&&p!=='Unknown'))].sort((a,b)=>a==='All'?-1:b==='All'?1:a.localeCompare(b));
+  let currF=WEEKLY_DATA.currentPeriodAds,priorF=WEEKLY_DATA.priorPeriodAds;
+  if(curProdT2!=='All'){currF=currF.filter(a=>a.product===curProdT2);priorF=priorF.filter(a=>a.product===curProdT2);}
+  const currKPI=periodKPI(currF),priorKPI=periodKPI(priorF);
+  const periods=computePeriodDates(tab2Period,tab2PeriodStart,tab2PeriodEnd);
+  panel.innerHTML=`
+    ${renderTab2FilterBar(products,periods)}
+    ${renderWeeklyKPIs(currKPI,priorKPI)}
+    <div class="div"></div>
+    <div class="sec"><div class="sec-h"><h2>📊 Daily Spend Chart</h2></div>${renderDailySpendChart(periods.current.start,periods.current.end)}</div>
+    <div class="div"></div>
+    <div class="sec"><div class="sec-h"><h2>↔ Week-over-Week Comparison</h2></div>${renderWoWTable(currKPI,priorKPI,periods)}</div>
+    <div class="div"></div>
+    <div class="sec"><div class="sec-h"><h2>🏅 Top 3 / Bottom 3 Ads (Period)</h2></div>${renderPeriodLeaderboard(currF)}</div>
+    <div class="div"></div>
+    <div class="sec"><div class="sec-h"><h2>🎨 Creative Breakdown</h2></div>${renderWeeklyCreativeBreakdown(currF)}</div>
+    <div class="div"></div>
+    <div class="sec"><div class="sec-h"><h2>⚡ Action Items</h2></div>${renderWeeklyActionItems(currF,priorF,currKPI,priorKPI)}</div>
+  `;
+}
+
+function renderTab2FilterBar(products,periods){
+  const presets=[{v:'last7',l:'Last 7d'},{v:'last14',l:'Last 14d'},{v:'last30',l:'Last 30d'},{v:'custom',l:'Custom'}];
+  const prodOpts=products.map(p=>`<option value="${p}" ${p===curProdT2?'selected':''}>${p}</option>`).join('');
+  const customInputs=tab2Period==='custom'?`
+    <input type="date" class="date-input" value="${tab2PeriodStart}" onchange="tab2PeriodStart=this.value">
+    <span style="color:var(--tx3)">–</span>
+    <input type="date" class="date-input" value="${tab2PeriodEnd}" onchange="tab2PeriodEnd=this.value">
+    <button class="preset-btn" onclick="applyTab2CustomRange()">Apply</button>`:'';
+  return`<div class="filter-bar">
+    <span class="flt-l">Product:</span>
+    <select onchange="curProdT2=this.value;renderWeeklyTab()">${prodOpts}</select>
+    <span class="flt-l" style="margin-left:8px">Period:</span>
+    ${presets.map(p=>`<button class="preset-btn${tab2Period===p.v?' active':''}" onclick="setTab2Period('${p.v}')">${p.l}</button>`).join('')}
+    ${customInputs}
+    <span style="margin-left:auto;font-size:11px;color:var(--tx3)">Current: ${periods.current.start} – ${periods.current.end}</span>
+  </div>`;
+}
+
+function setTab2Period(v){
+  tab2Period=v;
+  if(v!=='custom')loadWeeklyTab();
+  else renderWeeklyTab();
+}
+
+function applyTab2CustomRange(){
+  if(!tab2PeriodStart||!tab2PeriodEnd)return;
+  tab2Period='custom';
+  loadWeeklyTab();
+}
+
+function renderWeeklyKPIs(curr,prior){
+  const cards=[
+    {l:'Spend',v:fmt(curr.spend),d:deltaStr(curr.spend,prior.spend,false)},
+    {l:'Impressions',v:fN(curr.impressions),d:deltaStr(curr.impressions,prior.impressions,false)},
+    {l:'Clicks',v:fN(curr.clicks),d:deltaStr(curr.clicks,prior.clicks,false)},
+    {l:'CTR',v:pct(curr.ctr),d:deltaStr(curr.ctr,prior.ctr,false)},
+    {l:'CPC',v:inr(curr.cpc),d:deltaStr(curr.cpc,prior.cpc,true)},
+    {l:'ROAS',v:curr.roas>0?curr.roas.toFixed(2)+'x':'–',d:curr.roas>0&&prior.roas>0?deltaStr(curr.roas,prior.roas,false):''}
+  ];
+  return`<div class="kpis">${cards.map(c=>`<div class="kpi"><div class="kpi-l">${c.l}</div><div class="kpi-v mono">${c.v}</div>${c.d}</div>`).join('')}</div>`;
+}
+
+function renderDailySpendChart(start,end){
+  const items=getDatesInRange(start,end).map(d=>({
+    label:d.slice(5),
+    spend:(WEEKLY_DATA.dailySnapshots[d]||[]).reduce((s,a)=>s+(a.spend||0),0)
+  }));
+  return barChart(items,'spend','label','Daily Spend (Current Period)',()=>'var(--b)');
+}
+
+function renderWoWTable(curr,prior,periods){
+  const rows=[
+    ['Spend',fmt(curr.spend),fmt(prior.spend),deltaStr(curr.spend,prior.spend,false)],
+    ['Impressions',fN(curr.impressions),fN(prior.impressions),deltaStr(curr.impressions,prior.impressions,false)],
+    ['Clicks',fN(curr.clicks),fN(prior.clicks),deltaStr(curr.clicks,prior.clicks,false)],
+    ['CTR',pct(curr.ctr),pct(prior.ctr),deltaStr(curr.ctr,prior.ctr,false)],
+    ['CPC',inr(curr.cpc),inr(prior.cpc),deltaStr(curr.cpc,prior.cpc,true)],
+    ['ROAS',curr.roas>0?curr.roas.toFixed(2)+'x':'–',prior.roas>0?prior.roas.toFixed(2)+'x':'–',curr.roas>0&&prior.roas>0?deltaStr(curr.roas,prior.roas,false):'']
+  ].map(([m,c,p,d])=>`<tr><td style="font-weight:600">${m}</td><td class="mono">${c}</td><td class="mono" style="color:var(--tx3)">${p}</td><td>${d}</td></tr>`).join('');
+  return`<div class="card"><div class="tbl-w"><table><thead><tr><th>Metric</th><th>Current (${periods.current.start} – ${periods.current.end})</th><th>Prior (${periods.prior.start} – ${periods.prior.end})</th><th>Delta</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+
+function renderPeriodLeaderboard(ads){
+  const byCode={};
+  ads.forEach(a=>{
+    const k=a.ad_code||'?';
+    if(!byCode[k])byCode[k]={...a,spend:0,clicks:0,impressions:0,rn:0,rs:0};
+    byCode[k].spend+=a.spend||0;
+    byCode[k].clicks+=a.clicks||0;
+    byCode[k].impressions+=a.impressions||0;
+    if(a.roas>0){byCode[k].rn+=a.roas*(a.spend||0);byCode[k].rs+=a.spend||0;}
+  });
+  const agg=Object.values(byCode).map(a=>({
+    ...a,
+    ctr:a.impressions>0?a.clicks/a.impressions*100:0,
+    cpc:a.clicks>0?a.spend/a.clicks:0,
+    roas:a.rs>0?a.rn/a.rs:0
+  })).filter(a=>a.ctr>0).sort((a,b)=>b.ctr-a.ctr);
+  const top3=agg.slice(0,3),bot3=[...agg].reverse().slice(0,3);
+  const rr=(list,isTop)=>list.map(a=>{
+    const c=isTop?'var(--g)':'var(--r)';
+    return`<tr><td style="font-weight:600">${a.ad_code}</td><td class="mono" style="color:${c}">${pct(a.ctr)}</td><td class="mono">${inr(a.cpc)}</td><td>${a.format||'–'}</td><td>${a.product||'–'}</td></tr>`;
+  }).join('');
+  return`<div class="g2">
+    <div class="card" style="border-top:3px solid var(--g)"><h3 style="color:var(--g);font-size:12px;font-weight:700;margin-bottom:8px">🏆 Top 3 Ads</h3><div class="tbl-w"><table><thead><tr><th>Ad</th><th>CTR</th><th>CPC</th><th>Format</th><th>Product</th></tr></thead><tbody>${rr(top3,true)}</tbody></table></div><div style="margin-top:8px;font-size:10px;color:var(--tx3)">DNA:</div><div style="margin-top:4px">${traits(top3,true)}</div></div>
+    <div class="card" style="border-top:3px solid var(--r)"><h3 style="color:var(--r);font-size:12px;font-weight:700;margin-bottom:8px">⛔ Bottom 3 Ads</h3><div class="tbl-w"><table><thead><tr><th>Ad</th><th>CTR</th><th>CPC</th><th>Format</th><th>Product</th></tr></thead><tbody>${rr(bot3,false)}</tbody></table></div><div style="margin-top:8px;font-size:10px;color:var(--tx3)">DNA:</div><div style="margin-top:4px">${traits(bot3,false)}</div></div>
+  </div>`;
+}
+
+function renderWeeklyCreativeBreakdown(ads){
+  if(!ads.length)return`<div style="color:var(--tx3);padding:20px;text-align:center">No data for this period.</div>`;
+  return`<div class="g3">${dimTable(ads,'format','Format',false)}${dimTable(ads,'hook','Hook Type',false)}${dimTable(ads,'tone','Tone/Emotion',false)}</div>`;
+}
+
+function renderWeeklyActionItems(currF,priorF,currKPI,priorKPI){
+  const items=[];
+  function aggByCode(ads){
+    const m={};
+    ads.forEach(a=>{
+      const k=a.ad_code||'?';
+      if(!m[k])m[k]={code:k,spend:0,clicks:0,impressions:0,rn:0,rs:0,...a};
+      m[k].spend+=a.spend||0;m[k].clicks+=a.clicks||0;m[k].impressions+=a.impressions||0;
+      if(a.roas>0){m[k].rn+=a.roas*(a.spend||0);m[k].rs+=a.spend||0;}
+    });
+    return Object.values(m).map(a=>({...a,ctr:a.impressions>0?a.clicks/a.impressions*100:0,cpc:a.clicks>0?a.spend/a.clicks:0,roas:a.rs>0?a.rn/a.rs:0}));
+  }
+  const currAgg=aggByCode(currF),priorAgg=aggByCode(priorF);
+  const priorByCode={};priorAgg.forEach(a=>priorByCode[a.code]=a);
+  const periodAvgCtr=currAgg.length?currAgg.reduce((s,a)=>s+a.ctr,0)/currAgg.length:0;
+  currAgg.forEach(a=>{
+    const p=priorByCode[a.code];
+    if(!p||p.ctr===0)return;
+    const drop=(a.ctr-p.ctr)/p.ctr;
+    if(drop<-0.2&&a.spend>2000)items.push({type:'pause',msg:`<strong>Pause ${a.ad_code}</strong> — CTR dropped ${(drop*100).toFixed(1)}% WoW (${pct(p.ctr)} → ${pct(a.ctr)}), spend: ${fmt(a.spend)}`});
+  });
+  currAgg.forEach(a=>{
+    if(a.ctr>periodAvgCtr*1.3&&a.roas>2)items.push({type:'scale',msg:`<strong>Scale ${a.ad_code}</strong> — CTR ${pct(a.ctr)} (${((a.ctr/periodAvgCtr-1)*100).toFixed(0)}% above avg), ROAS ${a.roas.toFixed(2)}x`});
+  });
+  if(priorKPI.spend>0){
+    const d=(currKPI.spend-priorKPI.spend)/priorKPI.spend*100;
+    if(Math.abs(d)>15)items.push({type:'budget',msg:`<strong>Budget Alert</strong> — Spend ${d>0?'up ▲':'down ▼'} ${Math.abs(d).toFixed(1)}% vs prior period (${fmt(currKPI.spend)} vs ${fmt(priorKPI.spend)})`});
+  }
+  if(!items.length)return`<div class="card"><div class="ins ins-n"><span class="ins-ic">✅</span><div>No significant alerts this period. Performance looks stable.</div></div></div>`;
+  const cls={pause:'ins-l',scale:'ins-w',budget:'ins-y'},ic={pause:'🚨',scale:'🚀',budget:'📊'};
+  return`<div class="card">${items.map(it=>`<div class="ins ${cls[it.type]}"><span class="ins-ic">${ic[it.type]}</span><div>${it.msg}</div></div>`).join('')}</div>`;
+}
+
 // ============================================================
 // CONFIG & STORAGE
 // ============================================================
@@ -418,7 +821,7 @@ const LS={
 };
 
 // ============================================================
-// UTILITY
+// UTILITIES
 // ============================================================
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
@@ -446,7 +849,7 @@ function showSetupPrompt(){
   document.getElementById('app').innerHTML=`
     <div class="setup-prompt">
       <div style="font-size:40px;margin-bottom:16px">📊</div>
-      <h2>Welcome to Meta Ads Command Center</h2>
+      <h2>Welcome to Perf Control Tower</h2>
       <p style="margin-bottom:8px;font-size:13px">Connect your Meta Ads account to see live performance data.</p>
       <p style="margin-bottom:28px;font-size:12px;color:var(--tx3)">Your access token is stored only in this browser.</p>
       <button class="btn-primary" onclick="renderSettingsModal()" style="font-size:13px;padding:11px 28px">⚙ Configure Data Sources</button>
@@ -482,20 +885,12 @@ function renderSettingsModal(){
         <input id="cfg-csvUrl" type="text" placeholder="https://docs.google.com/spreadsheets/d/…/pub?output=csv" value="${escHtml(cfg.csvUrl)}"/>
         <div class="field-hint">File → Share → Publish to web → select sheet → CSV. Sheet must have an <code>ad_code</code> column matching your Meta ad names.</div>
       </div>
-      <div class="field">
-        <label>Date Range</label>
-        <div class="field-row">
-          <div><div class="field-hint" style="margin-bottom:5px">Start Date</div><input id="cfg-start" type="date" value="${escHtml(cfg.startDate)}"/></div>
-          <div><div class="field-hint" style="margin-bottom:5px">End Date</div><input id="cfg-end" type="date" value="${escHtml(cfg.endDate)}"/></div>
-        </div>
-        <div class="field-hint">Leave blank to use the last 90 days.</div>
-      </div>
       <div class="modal-footer">
         ${canClose?`<button class="btn-ghost" onclick="closeSettings()">Cancel</button>`:''}
         <button class="btn-primary" onclick="saveSettings()">Save & Load Data</button>
       </div>
     </div>`;
-  if(canClose) el.addEventListener('click',e=>{if(e.target===el)closeSettings();});
+  if(canClose)el.addEventListener('click',e=>{if(e.target===el)closeSettings();});
   document.body.appendChild(el);
   setTimeout(()=>document.getElementById('cfg-token')?.focus(),50);
 }
@@ -511,15 +906,13 @@ function saveSettings(){
   const token    =document.getElementById('cfg-token').value.trim();
   const accountId=document.getElementById('cfg-accountId').value.trim();
   const csvUrl   =document.getElementById('cfg-csvUrl').value.trim();
-  const startDate=document.getElementById('cfg-start').value;
-  const endDate  =document.getElementById('cfg-end').value;
   if(!token)     return showCfgError('Meta Access Token is required.');
   if(!accountId) return showCfgError('Ad Account ID is required.');
   if(!/^\d+$/.test(accountId)) return showCfgError('Ad Account ID must be numeric only (no "act_" prefix).');
   if(csvUrl&&!csvUrl.startsWith('https://docs.google.com/')) return showCfgError('CSV URL must be a Google Sheets published link.');
-  if(startDate&&endDate&&startDate>endDate) return showCfgError('Start date must be before end date.');
   LS.set('token',token);LS.set('accountId',accountId);LS.set('csvUrl',csvUrl);
-  LS.set('startDate',startDate);LS.set('endDate',endDate);
+  // Preserve current date preset
+  LS.set('startDate',tab1DateStart);LS.set('endDate',tab1DateEnd);
   closeSettings();
   initDashboard();
 }
@@ -533,8 +926,8 @@ async function metaPaginateAll(url){
     updateLoadingMsg(`Fetching Meta data… (page ${page+1})`);
     const res=await fetch(next);
     const json=await res.json();
-    if(json.error) throw new Error('Meta API: '+json.error.message);
-    if(Array.isArray(json.data)) all.push(...json.data);
+    if(json.error)throw new Error('Meta API: '+json.error.message);
+    if(Array.isArray(json.data))all.push(...json.data);
     next=json.paging?.next||null;
     page++;
   }
@@ -547,23 +940,17 @@ async function fetchMetaInsights(token,accountId,startDate,endDate){
   const dateParam=(startDate&&endDate)
     ?`&time_range=${encodeURIComponent(JSON.stringify({since:startDate,until:endDate}))}`
     :'&date_preset=last_90d';
-
-  // Ad-level (paginated)
-  const adsUrl=`${base}?access_token=${tok}&fields=${encodeURIComponent('ad_id,ad_name,impressions,spend,clicks,cpc,ctr,cpp,reach,frequency')}&level=ad&limit=500${dateParam}`;
+  const adFields=encodeURIComponent('ad_id,ad_name,impressions,spend,clicks,cpc,ctr,cpp,reach,frequency,purchase_roas');
+  const adsUrl=`${base}?access_token=${tok}&fields=${adFields}&level=ad&limit=500${dateParam}`;
   updateLoadingMsg('Fetching ad-level insights from Meta…');
   const adsRaw=await metaPaginateAll(adsUrl);
-
-  // Monthly
-  const mFields=encodeURIComponent('impressions,spend,clicks,cpc,date_start,date_stop');
+  const mFields=encodeURIComponent('impressions,spend,clicks,cpc,purchase_roas,date_start,date_stop');
   const monthlyUrl=`${base}?access_token=${tok}&fields=${mFields}&level=account&time_increment=monthly&limit=36${dateParam}`;
   updateLoadingMsg('Fetching monthly breakdown…');
   const monthlyRaw=await metaPaginateAll(monthlyUrl);
-
-  // Weekly
-  const weeklyUrl=`${base}?access_token=${tok}&fields=${mFields}&level=account&time_increment=7&limit=52${dateParam}`;
+  const weeklyUrl=`${base}?access_token=${tok}&fields=${encodeURIComponent('impressions,spend,clicks,cpc,date_start,date_stop')}&level=account&time_increment=7&limit=52${dateParam}`;
   updateLoadingMsg('Fetching weekly breakdown…');
   const weeklyRaw=await metaPaginateAll(weeklyUrl);
-
   return{adsRaw,monthlyRaw,weeklyRaw};
 }
 
@@ -601,7 +988,7 @@ async function fetchSheetData(csvUrl){
   const res=await fetch(url,{cache:'no-store'});
   if(!res.ok)throw new Error(`Google Sheets fetch failed (HTTP ${res.status}). Check your CSV URL.`);
   const text=await res.text();
-  if(text.trim().startsWith('<'))throw new Error('Google Sheets returned HTML. Make sure the sheet is published as CSV (File → Share → Publish to web).');
+  if(text.trim().startsWith('<'))throw new Error('Google Sheets returned HTML. Make sure the sheet is published as CSV.');
   return parseCsv(text);
 }
 
@@ -611,8 +998,10 @@ async function fetchSheetData(csvUrl){
 const TAXONOMY_DEFAULTS={visual_style:'Unknown',hook:'Unknown',tone:'Unknown',narrative:'Unknown',vo:'Unknown',production:'Unknown',format:'Unknown',funnel:'Unknown',product:'Unknown',created_by:'Unknown',offer:'Unknown',prices:'Unknown',rtb:'',starring:'',language:'',season:''};
 
 function normalizeMetaAd(raw){
-  var adName=(raw.ad_name||'').trim();
-  var match=adName.match(/NK-\d+/i);
+  const adName=(raw.ad_name||'').trim();
+  const match=adName.match(/NK-\d+/i);
+  const roasEntry=(raw.purchase_roas||[]).find(r=>r.action_type==='omni_purchase');
+  const roas=roasEntry?parseFloat(roasEntry.value)||0:0;
   return{
     ad_id:raw.ad_id||'',
     ad_code:match?match[0].toUpperCase():adName,
@@ -625,7 +1014,8 @@ function normalizeMetaAd(raw){
     cpp:parseFloat(raw.cpp)||0,
     reach:parseInt(raw.reach)||0,
     frequency:parseFloat(raw.frequency)||0,
-    cpv:0
+    cpv:0,
+    roas
   };
 }
 
@@ -644,7 +1034,9 @@ function buildMonthlyData(raw){
     const spend=parseFloat(r.spend)||0,clicks=parseInt(r.clicks)||0;
     const d=new Date(r.date_start);
     const month=d.toLocaleString('en',{month:'short'})+" '"+String(d.getFullYear()).slice(2);
-    return{month,spend,cpc:parseFloat(r.cpc)||(clicks>0?spend/clicks:0),roas:0};
+    const roasEntry=(r.purchase_roas||[]).find(x=>x.action_type==='omni_purchase');
+    const roas=roasEntry?parseFloat(roasEntry.value)||0:0;
+    return{month,spend,cpc:parseFloat(r.cpc)||(clicks>0?spend/clicks:0),roas};
   });
 }
 
@@ -663,6 +1055,9 @@ function buildWeeklyData(raw){
 async function initDashboard(){
   if(!LS.hasConfig()){showSetupPrompt();return;}
   const cfg=LS.all();
+  // Sync date preset state from LS
+  tab1DateStart=cfg.startDate||'';
+  tab1DateEnd=cfg.endDate||'';
   showLoading('Connecting to Meta Ads API…');
   try{
     const[metaResult,sheetRows]=await Promise.all([
@@ -697,86 +1092,6 @@ async function initDashboard(){
       if(DATA.ads.length>0)render();else showSetupPrompt();
     }
   }
-}
-
-// ============================================================
-function render(){
-  const ads=getAds();
-  const products=['All',...new Set(DATA.ads.map(a=>a.product).filter(p=>p&&p!=='Unknown'))].sort((a,b)=>a==='All'?-1:b==='All'?1:a.localeCompare(b));
-  const funnels=['All','TOF','MOF','BOF'];
-  
-  document.getElementById('app').innerHTML=`
-    <div class="hdr">
-      <div>
-        <h1>Meta Ads Performance Command Center</h1>
-        <div class="sub"><span class="status-dot"></span>${DATA.ads.length} ads · ${escHtml(LS.get('startDate')||'last 90 days')} – ${escHtml(LS.get('endDate')||'today')} · Live data · All values in INR</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <div class="filters">
-          <span class="flt-l">Product:</span>
-          <select id="fp">${products.map(p=>`<option value="${p}" ${p===curProd?'selected':''}>${p}</option>`).join('')}</select>
-          <span class="flt-l" style="margin-left:8px">Funnel:</span>
-          <select id="ff">${funnels.map(f=>`<option value="${f}" ${f===curFun?'selected':''}>${f}</option>`).join('')}</select>
-        </div>
-        <button class="btn-refresh" onclick="initDashboard()">↺ Refresh</button>
-        <button class="btn-settings" onclick="renderSettingsModal()">⚙ Settings</button>
-      </div>
-    </div>
-    
-    ${kpis(ads)}
-    ${execSummary(ads)}
-    
-    <div class="sec"><div class="sec-h"><h2>📈 Monthly & Weekly Trends</h2></div>${monthlyCharts()}<div style="margin-top:10px">${weeklyTable()}</div></div>
-    <div class="div"></div>
-    
-    <div class="sec"><div class="sec-h"><h2>📦 Product Performance</h2></div>
-    <div class="g2">
-      ${barChart(dimStats(ads,'product').filter(s=>s.val!=='Unknown'),'avgCtr','val','Product Avg CTR',i=>i.avgCtr>2.5?'var(--g)':i.avgCtr>1.8?'var(--b)':i.avgCtr>1.3?'var(--y)':'var(--r)')}
-      ${dimTable(ads,'product','Product',true)}
-    </div></div>
-    <div class="div"></div>
-    
-    <div class="sec"><div class="sec-h"><h2>🔽 Funnel Level Analysis</h2></div><div class="g3">${funnelCards(ads)}</div></div>
-    <div class="div"></div>
-    
-    <div class="sec"><div class="sec-h"><h2>📐 Creative Format Performance</h2></div>${dimTable(ads,'format','Creative Format',true)}</div>
-    
-    <div class="sec"><div class="sec-h"><h2>🎨 Visual Style Performance</h2></div>
-    <div class="g2">${dimTable(ads,'visual_style','Visual Style',true)}${barChart(dimStats(ads,'visual_style').filter(s=>s.val!=='Unknown'),'avgCtr','val','Visual Style CTR',i=>i.avgCtr>2.3?'var(--g)':i.avgCtr>1.8?'var(--y)':'var(--r)')}</div></div>
-    
-    <div class="sec"><div class="sec-h"><h2>🪝 Hook Type Performance</h2></div>${dimTable(ads,'hook','Hook Type',true)}</div>
-    
-    <div class="sec"><div class="sec-h"><h2>😤 Emotion / Tone Performance</h2></div>
-    <div class="g2">${dimTable(ads,'tone','Emotion / Tone',true)}${dimTable(ads,'narrative','Narrative / Pillar',true)}</div></div>
-    
-    <div class="sec"><div class="sec-h"><h2>🎙️ Voice Over & Production</h2></div>
-    <div class="g2">${dimTable(ads,'vo','Voice Over',false)}${dimTable(ads,'production','Production Team',false)}</div></div>
-    
-    <div class="sec"><div class="sec-h"><h2>👤 Creator Performance</h2></div>${dimTable(ads,'created_by','Created By',true)}</div>
-    
-    <div class="sec"><div class="sec-h"><h2>🏷️ Offer & Pricing</h2></div>
-    <div class="g2">${dimTable(ads,'offer','Offer Type',false)}${dimTable(ads,'prices','Pricing Shown',false)}</div></div>
-    <div class="div"></div>
-    
-    <div class="sec"><div class="sec-h"><h2>🔀 Cross-Dimensional Analysis</h2></div>${crossAnalysis(ads)}</div>
-    <div class="div"></div>
-    
-    <div class="sec"><div class="sec-h"><h2>🏅 Individual Ad Leaderboard</h2></div>${topBottom(ads)}</div>
-    <div class="div"></div>
-    
-    <div class="sec"><div class="sec-h"><h2>💸 Spend Efficiency Flags</h2></div>${spendFlags(ads)}</div>
-    <div class="div"></div>
-    
-    <div class="sec"><div class="sec-h"><h2>📋 Full Ad Explorer (${ads.length} ads)</h2></div>${fullTable(ads)}</div>
-    <div class="div"></div>
-    
-    <div class="sec">${costPlaybook(ads)}</div>
-    
-    <div style="text-align:center;padding:24px;color:var(--tx3);font-size:11px">Meta Ads Command Center · ${DATA.ads.length} creatives · All values INR · Last fetched: ${new Date().toLocaleString()}</div>
-  `;
-  
-  document.getElementById('fp').addEventListener('change',e=>{curProd=e.target.value;render()});
-  document.getElementById('ff').addEventListener('change',e=>{curFun=e.target.value;render()});
 }
 
 initDashboard();
